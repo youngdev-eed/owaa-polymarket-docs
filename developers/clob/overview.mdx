@@ -1,0 +1,160 @@
+---
+title: "CLOB Overview"
+description: "Understanding Polymarket's Central Limit Order Book"
+---
+
+## What is CLOB?
+
+The Central Limit Order Book (CLOB) is Polymarket's order matching system. It aggregates all buy and sell orders for each market, enabling efficient price discovery and trade execution.
+
+## How It Works
+
+### Order Matching
+
+The CLOB matches buyers and sellers based on price and time priority:
+
+1. **Price Priority:** Best prices are matched first
+2. **Time Priority:** Earlier orders at the same price are filled first
+3. **Continuous Trading:** Orders are matched in real-time as they arrive
+
+### Market Structure
+
+Each market has two order books, one for each outcome:
+
+- **YES Order Book:** Orders to buy/sell YES shares
+- **NO Order Book:** Orders to buy/sell NO shares
+
+Prices always satisfy: YES Price + NO Price = $1.00
+
+## Order Types
+
+### Limit Orders
+
+Specify the exact price and size you want to trade:
+
+- **Buy Limit:** Maximum price you'll pay
+- **Sell Limit:** Minimum price you'll accept
+- **Fills:** Partial or complete based on available liquidity
+
+**Example:**
+```json
+{
+  "side": "BUY",
+  "price": "0.65",
+  "size": "100"
+}
+```
+
+### Market Orders
+
+Execute immediately at the best available price:
+
+- **Buy Market:** Purchase at lowest ask price
+- **Sell Market:** Sell at highest bid price
+- **Slippage:** May execute at multiple price levels
+
+## Order Book Structure
+
+### Bids and Asks
+
+- **Bids:** Buy orders (demand side)
+- **Asks:** Sell orders (supply side)
+- **Spread:** Difference between best bid and best ask
+
+### Order Book Depth
+
+The order book shows liquidity at each price level:
+
+```
+Asks (Sell Orders)
+Price   Size
+$0.68   150
+$0.67   200
+$0.66   300
+
+Spread: $0.01
+
+Bids (Buy Orders)
+Price   Size
+$0.65   250
+$0.64   180
+$0.63   220
+```
+
+## Key Features
+
+### High Liquidity
+
+The CLOB aggregates orders from all participants, creating deep liquidity pools for popular markets.
+
+### Transparent Pricing
+
+All orders are visible in the order book, providing complete price transparency.
+
+### Fair Execution
+
+Orders are matched algorithmically based on price-time priority, ensuring fair execution.
+
+### Real-Time Updates
+
+Order book changes are broadcast in real-time via WebSocket connections.
+
+## API Access
+
+### Read Operations (Public)
+
+- Get order book snapshots
+- View current prices
+- Access trade history
+- Query market data
+
+### Write Operations (Authenticated)
+
+- Place limit orders
+- Place market orders
+- Cancel orders
+- Modify orders
+
+## Best Practices
+
+### For Market Makers
+
+1. Monitor order book depth
+2. Update quotes based on price changes
+3. Manage inventory across YES/NO positions
+4. Use WebSocket for real-time updates
+
+### For Traders
+
+1. Check order book before trading
+2. Use limit orders for better prices
+3. Be aware of slippage on large orders
+4. Monitor execution quality
+
+### For Developers
+
+1. Implement proper error handling
+2. Cache static market data
+3. Use WebSocket for live data
+4. Respect rate limits
+
+## Trading Fees
+
+Polymarket charges **zero trading fees** on the CLOB. You only pay blockchain gas fees for on-chain operations (deposits/withdrawals).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Endpoints" icon="plug" href="/developers/clob/endpoints">
+    Explore available API endpoints
+  </Card>
+  <Card title="Order Management" icon="list" href="/developers/clob/order-management">
+    Learn to place and manage orders
+  </Card>
+  <Card title="Trading Data" icon="chart-bar" href="/developers/clob/trading-data">
+    Access historical trading data
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/developers/real-time/websocket-connections">
+    Set up real-time connections
+  </Card>
+</CardGroup>

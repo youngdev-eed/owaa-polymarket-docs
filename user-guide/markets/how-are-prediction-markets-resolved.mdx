@@ -1,0 +1,23 @@
+---
+title: "How Are Prediction Markets Resolved?"
+description: "Markets are resolved by the UMA Optimistic Oracle, a smart-contract based optimistic oracle."
+---
+
+Markets on Polymarket become finalized once their outcomes become clear. The resolution process follows pre-defined rules specific to each market, which traders can find in the order book section.
+
+## Resolution Outcomes
+
+- Winning shareholders receive $1 per share
+- Losing shares become worthless
+- Trading ceases immediately upon resolution
+- Resolution requires a proposed outcome backed by a USDC.e bond
+
+## To Propose a Market Resolution
+
+The process begins with a proposer submitting an outcome and depositing a $750 bond. If the proposal is validated as accurate, the proposer recovers the bond plus receives a reward. If unsuccessful or proposed too early, the full bond is forfeited.
+
+Following submission, UMA reviews the transaction for correctness. Approval returns the bond plus reward to the proposer's wallet.
+
+## To Dispute a Proposed Resolution
+
+Once a market enters resolution proposal, there's a 2-hour challenge period. During this window, disagreeing parties can dispute the proposed outcome through UMA's dispute resolution mechanism, detailed in related documentation.

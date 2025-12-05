@@ -1,0 +1,347 @@
+---
+title: "Gamma Market Structure"
+description: "Understanding Polymarket's market structure and metadata"
+---
+
+## Overview
+
+Gamma Markets provide the structural layer for Polymarket's prediction markets. This includes market metadata, outcome definitions, resolution rules, and market lifecycle management.
+
+## Market Structure
+
+### Market Components
+
+Each market consists of:
+
+1. **Question:** What is being predicted
+2. **Outcomes:** Possible results (typically YES/NO)
+3. **Resolution Source:** How outcome is determined
+4. **End Date:** When market closes for trading
+5. **Resolution Date:** When outcome is finalized
+6. **Metadata:** Additional information
+
+### Market Object
+
+```json
+{
+  "id": "market_id",
+  "question": "Will X happen before Y?",
+  "description": "Detailed description...",
+  "category": "Politics",
+  "end_date": "2024-12-31T23:59:59Z",
+  "resolution_date": "2025-01-05T00:00:00Z",
+  "outcomes": [
+    {
+      "id": "outcome_yes",
+      "name": "Yes",
+      "token_id": "0x1234..."
+    },
+    {
+      "id": "outcome_no",
+      "name": "No",
+      "token_id": "0x5678..."
+    }
+  ],
+  "resolution_rules": "Market resolves to Yes if...",
+  "resolution_source": "https://source.com",
+  "tags": ["politics", "election"],
+  "creator": "0xabcd...",
+  "created_at": "2024-01-01T00:00:00Z",
+  "status": "active"
+}
+```
+
+## Market Lifecycle
+
+### States
+
+Markets progress through these states:
+
+1. **Draft:** Being created
+2. **Active:** Open for trading
+3. **Closed:** Trading ended, awaiting resolution
+4. **Resolved:** Outcome determined
+5. **Disputed:** Resolution challenged
+6. **Finalized:** Payouts complete
+
+### State Transitions
+
+```
+Draft → Active → Closed → Resolved → Finalized
+                    ↓
+                Disputed → Resolved → Finalized
+```
+
+## Outcome Tokens
+
+### Token Structure
+
+Each outcome is represented by an ERC-20 token:
+
+```json
+{
+  "token_id": "0x1234...",
+  "name": "Will X happen? - Yes",
+  "symbol": "POLY-YES-123",
+  "decimals": 6,
+  "market_id": "market_id",
+  "outcome": "Yes",
+  "supply": "10000000000"
+}
+```
+
+### Token Properties
+
+- **Collateralized:** Each YES/NO pair backed by 1 USDC
+- **Divisible:** Can be split into fractional shares
+- **Tradeable:** Can be bought/sold on CLOB
+- **Redeemable:** Winners redeem for 1 USDC
+
+## Market Categories
+
+Markets are organized into categories:
+
+- **Politics:** Elections, legislation, appointments
+- **Crypto:** Price predictions, protocol events
+- **Sports:** Game outcomes, championships
+- **Pop Culture:** Entertainment, awards
+- **Science:** Discoveries, space missions
+- **Business:** Company events, economic indicators
+
+## Resolution
+
+### Resolution Sources
+
+Markets use various resolution sources:
+
+1. **Official Sources:** Government websites, official announcements
+2. **News Outlets:** Major news organizations
+3. **Data Providers:** Bloomberg, Reuters
+4. **Smart Contracts:** On-chain data
+5. **UMA Oracle:** Decentralized resolution
+
+### Resolution Rules
+
+Clear, objective rules for determining outcomes:
+
+```json
+{
+  "market_id": "market_id",
+  "resolution_rules": {
+    "yes_condition": "Event X occurs before date Y",
+    "no_condition": "Event X does not occur before date Y",
+    "invalid_condition": "Event becomes impossible to determine",
+    "sources": [
+      "https://official-source.com",
+      "https://backup-source.com"
+    ]
+  }
+}
+```
+
+## Market Metadata API
+
+### Get Market Information
+
+```http
+GET /gamma/markets/{market_id}
+```
+
+Returns complete market metadata.
+
+### Query Markets
+
+```http
+GET /gamma/markets?category=Politics&status=active
+```
+
+Parameters:
+- `category`: Filter by category
+- `status`: Filter by status
+- `tag`: Filter by tag
+- `limit`: Max results
+- `offset`: Pagination offset
+
+### Search Markets
+
+```http
+GET /gamma/markets/search?q=election
+```
+
+Full-text search across market questions and descriptions.
+
+## Market Creation
+
+### Proposal Structure
+
+Market creation proposals include:
+
+```json
+{
+  "question": "Will X happen?",
+  "description": "Detailed context...",
+  "category": "Politics",
+  "outcomes": ["Yes", "No"],
+  "end_date": "2024-12-31T23:59:59Z",
+  "resolution_source": "https://source.com",
+  "resolution_rules": "Market resolves...",
+  "tags": ["tag1", "tag2"]
+}
+```
+
+### Review Process
+
+1. **Submission:** Proposal submitted
+2. **Review:** Checked for clarity and objectivity
+3. **Approval:** Accepted or rejected
+4. **Deployment:** Smart contracts created
+5. **Activation:** Market opens for trading
+
+## Market Updates
+
+### Clarifications
+
+Markets can be clarified for ambiguity:
+
+```json
+{
+  "market_id": "market_id",
+  "clarification": "Additional details...",
+  "timestamp": "2024-06-01T00:00:00Z",
+  "reason": "Addressing edge case..."
+}
+```
+
+### Amendments
+
+Critical changes before resolution:
+
+- Updated resolution source
+- Corrected end date
+- Additional context
+
+## Market Analytics
+
+### Get Market Stats
+
+```http
+GET /gamma/markets/{market_id}/stats
+```
+
+Returns:
+```json
+{
+  "market_id": "market_id",
+  "total_volume": "50000",
+  "total_liquidity": "10000",
+  "unique_traders": 234,
+  "total_trades": 1523,
+  "current_probability": {
+    "yes": "0.65",
+    "no": "0.35"
+  },
+  "volume_24h": "2500",
+  "price_change_24h": "+0.05"
+}
+```
+
+### Historical Data
+
+```http
+GET /gamma/markets/{market_id}/history
+```
+
+Returns market history including:
+- Price changes over time
+- Volume trends
+- Liquidity evolution
+- Major events
+
+## Market Events
+
+### Event Feed
+
+```http
+GET /gamma/markets/{market_id}/events
+```
+
+Returns chronological events:
+```json
+[
+  {
+    "type": "created",
+    "timestamp": "2024-01-01T00:00:00Z"
+  },
+  {
+    "type": "clarified",
+    "details": "Additional context...",
+    "timestamp": "2024-06-01T00:00:00Z"
+  },
+  {
+    "type": "closed",
+    "timestamp": "2024-12-31T23:59:59Z"
+  },
+  {
+    "type": "resolved",
+    "outcome": "Yes",
+    "timestamp": "2025-01-05T00:00:00Z"
+  }
+]
+```
+
+## Integration Examples
+
+### Fetch Market Data
+
+```javascript
+async function getMarketData(marketId) {
+  const response = await fetch(
+    `https://gamma-api.polymarket.com/markets/${marketId}`
+  );
+  return response.json();
+}
+```
+
+### Monitor Market Status
+
+```javascript
+async function checkMarketStatus(marketId) {
+  const market = await getMarketData(marketId);
+
+  if (market.status === 'closed') {
+    console.log('Market closed, awaiting resolution');
+  } else if (market.status === 'resolved') {
+    console.log('Outcome:', market.outcome);
+  }
+}
+```
+
+### List Active Markets
+
+```javascript
+async function getActiveMarkets(category) {
+  const response = await fetch(
+    `https://gamma-api.polymarket.com/markets?category=${category}&status=active`
+  );
+  return response.json();
+}
+```
+
+## Best Practices
+
+1. **Cache Metadata:** Market info changes infrequently
+2. **Monitor Status:** Track market lifecycle
+3. **Read Rules:** Understand resolution criteria
+4. **Check Sources:** Verify resolution sources
+5. **Watch Events:** Subscribe to market events
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Blockchain Integration" icon="link" href="/developers/gamma/blockchain-integration">
+    Learn about on-chain integration
+  </Card>
+  <Card title="CLOB API" icon="book" href="/developers/clob/overview">
+    Start trading on markets
+  </Card>
+</CardGroup>

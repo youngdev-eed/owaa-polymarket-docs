@@ -1,0 +1,294 @@
+---
+title: "Order Management"
+description: "Learn how to create, manage, and cancel orders on Polymarket"
+---
+
+## Order Lifecycle
+
+Understanding the order lifecycle is crucial for effective trading:
+
+1. **Created:** Order is submitted to the CLOB
+2. **Pending:** Order is validated and queued
+3. **Open:** Order is active in the order book
+4. **Partially Filled:** Part of the order has executed
+5. **Filled:** Order completely executed
+6. **Cancelled:** Order removed from book
+7. **Expired:** Order reached expiration time
+
+## Creating Orders
+
+### Limit Order
+
+Place an order at a specific price:
+
+```javascript
+const order = {
+  token_id: "0x1234...",
+  side: "BUY",           // BUY or SELL
+  price: "0.65",         // Price in USDC
+  size: "100",           // Size in shares
+  expiration: 1704067199 // Unix timestamp
+};
+```
+
+### Order Parameters
+
+- **token_id** (required): The outcome token to trade
+- **side** (required): BUY or SELL
+- **price** (required): Limit price (0.00 - 1.00)
+- **size** (required): Number of shares
+- **expiration** (optional): When order expires
+- **nonce** (required): Unique order identifier
+
+### Price Constraints
+
+Prices must satisfy:
+- Minimum: $0.01
+- Maximum: $0.99
+- Precision: 2 decimal places
+- YES price + NO price = $1.00
+
+### Size Constraints
+
+- Minimum: 1 share
+- Maximum: Based on available balance
+- Must be whole number
+
+## Order Validation
+
+Before submitting, ensure:
+
+1. **Sufficient Balance:** You have enough USDC
+2. **Valid Price:** Price is within range
+3. **Valid Size:** Size meets minimum requirements
+4. **Proper Signature:** Order is correctly signed
+
+## Managing Active Orders
+
+### View Your Orders
+
+```http
+GET /orders?user={your_address}
+```
+
+Filter by status:
+```http
+GET /orders?user={your_address}&status=OPEN
+```
+
+### Check Order Status
+
+```http
+GET /orders/{order_id}
+```
+
+Response includes:
+- Current status
+- Fill amount
+- Remaining size
+- Price
+- Timestamp
+
+### Modify Orders
+
+To modify an order:
+1. Cancel the existing order
+2. Create a new order with updated parameters
+
+Direct modifications are not supported.
+
+## Cancelling Orders
+
+### Cancel Single Order
+
+```http
+DELETE /orders/{order_id}
+```
+
+Returns confirmation:
+```json
+{
+  "order_id": "order_id",
+  "status": "CANCELLED"
+}
+```
+
+### Cancel Multiple Orders
+
+```http
+POST /orders/cancel
+```
+
+Request body:
+```json
+{
+  "order_ids": ["order_1", "order_2", "order_3"]
+}
+```
+
+### Cancel All Orders
+
+Cancel all open orders for your account:
+
+```http
+DELETE /orders
+```
+
+Optional filters:
+- `market_id`: Cancel only orders in specific market
+- `token_id`: Cancel only orders for specific token
+
+## Order Fill Notifications
+
+### Polling Method
+
+Check order status periodically:
+
+```javascript
+setInterval(() => {
+  fetch(`/orders/${orderId}`)
+    .then(res => res.json())
+    .then(order => {
+      if (order.status === 'FILLED') {
+        console.log('Order filled!');
+      }
+    });
+}, 5000); // Check every 5 seconds
+```
+
+### WebSocket Method (Recommended)
+
+Subscribe to order updates:
+
+```javascript
+ws.subscribe({
+  channel: 'user',
+  auth_token: 'your_token'
+});
+
+ws.on('order_update', (data) => {
+  console.log('Order update:', data);
+});
+```
+
+## Batch Operations
+
+### Create Multiple Orders
+
+Submit many orders in one request:
+
+```http
+POST /orders
+```
+
+Benefits:
+- Reduced API calls
+- Atomic execution
+- Lower latency
+
+### Cancel Multiple Orders
+
+Cancel many orders at once:
+
+```http
+POST /orders/cancel
+```
+
+Faster than individual cancellations.
+
+## Best Practices
+
+### Order Placement
+
+1. **Check Liquidity:** Review order book before placing large orders
+2. **Use Limit Orders:** Better price control than market orders
+3. **Set Expiration:** Prevent stale orders
+4. **Validate First:** Check balance and parameters
+
+### Order Management
+
+1. **Monitor Fills:** Track partial fills
+2. **Update Prices:** Adjust orders as market moves
+3. **Clean Up:** Cancel stale orders
+4. **Use WebSocket:** Real-time updates more efficient
+
+### Error Handling
+
+1. **Retry Logic:** Handle transient failures
+2. **Nonce Management:** Track used nonces
+3. **Balance Checks:** Verify sufficient funds
+4. **Rate Limits:** Implement backoff
+
+## Common Patterns
+
+### Market Making
+
+```javascript
+// Place bid and ask around mid price
+const midPrice = 0.50;
+const spread = 0.02;
+
+const bid = {
+  side: 'BUY',
+  price: (midPrice - spread/2).toFixed(2),
+  size: '100'
+};
+
+const ask = {
+  side: 'SELL',
+  price: (midPrice + spread/2).toFixed(2),
+  size: '100'
+};
+```
+
+### Arbitrage
+
+```javascript
+// Cancel old orders and place new ones
+await cancelAllOrders();
+await createBatchOrders(newOrders);
+```
+
+### Risk Management
+
+```javascript
+// Stop loss: Cancel all orders if position hits threshold
+if (unrealizedLoss > threshold) {
+  await cancelAllOrders();
+  await closePosition();
+}
+```
+
+## Troubleshooting
+
+### Order Not Filling
+
+- Check if price is competitive
+- Review order book depth
+- Verify order is OPEN status
+- Ensure sufficient counterparty interest
+
+### Cancellation Failed
+
+- Verify order still exists
+- Check order isn't already filled
+- Ensure proper authentication
+- Try again after brief delay
+
+### Balance Issues
+
+- Check USDC balance
+- Account for pending orders
+- Consider reserved amounts
+- Verify blockchain confirmations
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Trading Data" icon="chart-bar" href="/developers/clob/trading-data">
+    Access historical data
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/developers/real-time/websocket-connections">
+    Real-time updates
+  </Card>
+</CardGroup>

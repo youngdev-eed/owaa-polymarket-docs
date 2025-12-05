@@ -1,0 +1,6 @@
+__debug_*
+
+/build
+/bin
+/static
+perpstock-api.zip

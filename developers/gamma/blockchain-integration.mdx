@@ -1,0 +1,380 @@
+---
+title: "Blockchain Integration"
+description: "Integrate with Polymarket's smart contracts on Polygon"
+---
+
+## Overview
+
+Polymarket operates on the Polygon network, utilizing smart contracts for market creation, trading settlement, and outcome resolution. This guide covers blockchain integration for developers.
+
+## Network Details
+
+### Polygon Mainnet
+
+```
+Network Name: Polygon Mainnet
+RPC URL: https://polygon-rpc.com
+Chain ID: 137
+Currency Symbol: MATIC
+Block Explorer: https://polygonscan.com
+```
+
+### USDC Contract
+
+All trading uses USDC on Polygon:
+
+```
+USDC Address: 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174
+Decimals: 6
+```
+
+## Smart Contracts
+
+### Core Contracts
+
+**Conditional Tokens Framework (CTF):**
+```
+Address: 0x4D97DCd97eC945f40cF65F87097ACe5EA0476045
+```
+
+The CTF is the foundation for outcome tokens. Each market uses CTF to create collateralized outcome tokens.
+
+**CTF Exchange:**
+```
+Address: 0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E
+```
+
+Handles atomic swaps between outcome tokens and USDC.
+
+**Neg Risk CTF Exchange:**
+```
+Address: 0xC5d563A36AE78145C45a50134d48A1215220f80a
+```
+
+Specialized exchange for negative risk markets.
+
+### Market Contracts
+
+Each market has associated contracts:
+
+1. **Condition ID:** Unique identifier for the market
+2. **Outcome Tokens:** ERC-20 tokens for each outcome
+3. **Position IDs:** Specific outcome positions
+
+## Interacting with Contracts
+
+### Reading Data
+
+#### Get Token Balance
+
+```javascript
+import { ethers } from 'ethers';
+
+const provider = new ethers.JsonRpcProvider('https://polygon-rpc.com');
+const tokenAddress = '0x...'; // Outcome token address
+const userAddress = '0x...';
+
+const abi = ['function balanceOf(address) view returns (uint256)'];
+const contract = new ethers.Contract(tokenAddress, abi, provider);
+
+const balance = await contract.balanceOf(userAddress);
+console.log('Balance:', ethers.formatUnits(balance, 6));
+```
+
+#### Get Market Condition
+
+```javascript
+const ctfAddress = '0x4D97DCd97eC945f40cF65F87097ACe5EA0476045';
+const conditionId = '0x...'; // Market condition ID
+
+const ctfAbi = [
+  'function payoutDenominator(bytes32) view returns (uint256)',
+  'function payoutNumerators(bytes32, uint256) view returns (uint256)'
+];
+
+const ctf = new ethers.Contract(ctfAddress, ctfAbi, provider);
+const denominator = await ctf.payoutDenominator(conditionId);
+```
+
+### Writing Transactions
+
+#### Approve USDC Spending
+
+```javascript
+const usdcAddress = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174';
+const spenderAddress = '0x...'; // Exchange contract
+const amount = ethers.parseUnits('100', 6); // 100 USDC
+
+const usdcAbi = ['function approve(address, uint256) returns (bool)'];
+const usdc = new ethers.Contract(usdcAddress, usdcAbi, signer);
+
+const tx = await usdc.approve(spenderAddress, amount);
+await tx.wait();
+```
+
+#### Split Position (Buy Shares)
+
+```javascript
+const ctfExchange = '0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E';
+const conditionId = '0x...';
+const amount = ethers.parseUnits('100', 6);
+
+const exchangeAbi = [
+  'function splitPosition(address, bytes32, bytes32, uint256) returns (uint256)'
+];
+
+const exchange = new ethers.Contract(ctfExchange, exchangeAbi, signer);
+const tx = await exchange.splitPosition(
+  usdcAddress,
+  conditionId,
+  partition,
+  amount
+);
+await tx.wait();
+```
+
+#### Merge Position (Sell Shares)
+
+```javascript
+const exchangeAbi = [
+  'function mergePositions(address, bytes32, bytes32, uint256) returns (uint256)'
+];
+
+const exchange = new ethers.Contract(ctfExchange, exchangeAbi, signer);
+const tx = await exchange.mergePositions(
+  usdcAddress,
+  conditionId,
+  partition,
+  amount
+);
+await tx.wait();
+```
+
+#### Redeem Winning Shares
+
+```javascript
+const ctfAbi = [
+  'function redeemPositions(address, bytes32, bytes32, uint256[])'
+];
+
+const ctf = new ethers.Contract(ctfAddress, ctfAbi, signer);
+const tx = await ctf.redeemPositions(
+  usdcAddress,
+  parentCollectionId,
+  conditionId,
+  indexSets
+);
+await tx.wait();
+```
+
+## Events
+
+### Monitor Market Events
+
+```javascript
+const ctf = new ethers.Contract(ctfAddress, ctfAbi, provider);
+
+// Listen for condition preparation
+ctf.on('ConditionPreparation', (conditionId, oracle, questionId, outcomeSlotCount) => {
+  console.log('New market created:', conditionId);
+});
+
+// Listen for condition resolution
+ctf.on('ConditionResolution', (conditionId, oracle, questionId, outcomeSlotCount, payoutNumerators) => {
+  console.log('Market resolved:', conditionId);
+  console.log('Outcome:', payoutNumerators);
+});
+```
+
+### Monitor Trades
+
+```javascript
+const exchange = new ethers.Contract(ctfExchange, exchangeAbi, provider);
+
+exchange.on('TokenTrade', (trader, collateralToken, conditionId, amount, price) => {
+  console.log('Trade executed:', {
+    trader,
+    amount: ethers.formatUnits(amount, 6),
+    price: ethers.formatUnits(price, 6)
+  });
+});
+```
+
+## Gas Optimization
+
+### Estimating Gas
+
+```javascript
+const gasEstimate = await contract.splitPosition.estimateGas(
+  usdcAddress,
+  conditionId,
+  partition,
+  amount
+);
+
+console.log('Estimated gas:', gasEstimate.toString());
+```
+
+### Setting Gas Price
+
+```javascript
+const feeData = await provider.getFeeData();
+
+const tx = await contract.splitPosition(
+  usdcAddress,
+  conditionId,
+  partition,
+  amount,
+  {
+    maxFeePerGas: feeData.maxFeePerGas,
+    maxPriorityFeePerGas: feeData.maxPriorityFeePerGas
+  }
+);
+```
+
+## Position Management
+
+### Calculate Position ID
+
+```javascript
+function getPositionId(collateralToken, collectionId) {
+  return ethers.solidityPackedKeccak256(
+    ['address', 'bytes32'],
+    [collateralToken, collectionId]
+  );
+}
+```
+
+### Get Collection ID
+
+```javascript
+function getCollectionId(parentCollectionId, conditionId, indexSet) {
+  return ethers.solidityPackedKeccak256(
+    ['bytes32', 'bytes32', 'uint256'],
+    [parentCollectionId, conditionId, indexSet]
+  );
+}
+```
+
+## Subgraph Queries
+
+Polymarket provides a GraphQL subgraph for querying blockchain data:
+
+```graphql
+query GetMarket($conditionId: String!) {
+  condition(id: $conditionId) {
+    id
+    questionId
+    outcomeSlotCount
+    resolved
+    payoutNumerators
+    positions {
+      id
+      collateralToken {
+        id
+        symbol
+      }
+      indexSets
+      wrappedTokens {
+        id
+        symbol
+        totalSupply
+      }
+    }
+  }
+}
+```
+
+## Best Practices
+
+### Transaction Management
+
+1. **Estimate Gas:** Always estimate before sending
+2. **Handle Reverts:** Implement error handling
+3. **Wait for Confirmations:** Ensure transactions finalize
+4. **Nonce Management:** Track transaction nonces
+5. **Fee Optimization:** Use appropriate gas prices
+
+### Security
+
+1. **Validate Addresses:** Check contract addresses
+2. **Approve Carefully:** Limit USDC approvals
+3. **Verify Transactions:** Review before signing
+4. **Private Key Safety:** Secure key management
+5. **Contract Audits:** Use audited contracts only
+
+### Performance
+
+1. **Batch Operations:** Combine when possible
+2. **Cache Data:** Avoid redundant reads
+3. **Use Events:** Monitor blockchain events
+4. **RPC Provider:** Use reliable provider
+5. **Indexing:** Use subgraph for complex queries
+
+## Development Tools
+
+### Testing
+
+```javascript
+import { ethers } from 'hardhat';
+
+describe('Polymarket Integration', () => {
+  it('should split position', async () => {
+    const [signer] = await ethers.getSigners();
+    // Test implementation
+  });
+});
+```
+
+### Hardhat Configuration
+
+```javascript
+module.exports = {
+  networks: {
+    polygon: {
+      url: 'https://polygon-rpc.com',
+      accounts: [process.env.PRIVATE_KEY]
+    }
+  }
+};
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Insufficient Allowance:**
+```
+Error: ERC20: transfer amount exceeds allowance
+Solution: Approve USDC spending first
+```
+
+**Insufficient Balance:**
+```
+Error: ERC20: transfer amount exceeds balance
+Solution: Ensure sufficient USDC balance
+```
+
+**Invalid Condition:**
+```
+Error: Condition not prepared
+Solution: Verify market exists and condition ID
+```
+
+## Resources
+
+- [Polygon Documentation](https://docs.polygon.technology/)
+- [Ethers.js Documentation](https://docs.ethers.org/)
+- [CTF Documentation](https://docs.gnosis.io/conditionaltokens/)
+- [Polygonscan](https://polygonscan.com)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Market Structure" icon="sitemap" href="/developers/gamma/market-structure">
+    Understand market metadata
+  </Card>
+  <Card title="CLOB API" icon="book" href="/developers/clob/overview">
+    Trade via API
+  </Card>
+</CardGroup>

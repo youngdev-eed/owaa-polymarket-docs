@@ -1,0 +1,144 @@
+---
+title: "Developer Quickstart"
+description: "Make your first API call to Polymarket in minutes"
+---
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- Basic understanding of REST APIs
+- Familiarity with JSON
+- HTTP client (curl, Postman, or programming language of choice)
+- USDC on Polygon (if you plan to trade)
+
+## API Endpoint
+
+The Polymarket CLOB API is available at:
+
+```
+https://clob.polymarket.com
+```
+
+## Your First API Call
+
+Let's fetch market data for all active markets:
+
+```bash
+curl https://clob.polymarket.com/markets
+```
+
+This returns a list of all available markets with their metadata.
+
+## Key Concepts
+
+### Markets
+
+Each market represents a question about a future event. Markets contain:
+
+- **Market ID:** Unique identifier
+- **Question:** The event being predicted
+- **Outcomes:** Possible results (usually YES/NO)
+- **End Date:** When the market closes
+- **Resolution Source:** How the outcome is determined
+
+### Tokens
+
+Each outcome in a market is represented by a token:
+
+- **Token ID:** Unique identifier for the outcome
+- **Price:** Current trading price ($0.00 - $1.00)
+- **Volume:** Total trading volume
+
+### Orders
+
+Orders represent buy or sell intentions:
+
+- **Limit Orders:** Specify exact price and size
+- **Market Orders:** Execute at current market price
+- **Order Book:** Collection of all outstanding orders
+
+## Common API Operations
+
+### Get Market Information
+
+```bash
+# Get all markets
+curl https://clob.polymarket.com/markets
+
+# Get specific market
+curl https://clob.polymarket.com/markets/{market_id}
+```
+
+### Get Order Book
+
+```bash
+curl https://clob.polymarket.com/book?token_id={token_id}
+```
+
+### Get Market Prices
+
+```bash
+curl https://clob.polymarket.com/prices?market_id={market_id}
+```
+
+### Get Price History
+
+```bash
+curl https://clob.polymarket.com/prices/history?market_id={market_id}
+```
+
+## Rate Limits
+
+The API has rate limits to ensure fair usage:
+
+- **Default:** 100 requests per minute
+- **Authenticated:** Higher limits available
+- **WebSocket:** Preferred for real-time data
+
+If you exceed rate limits, you'll receive a 429 status code.
+
+## Authentication
+
+For trading operations (placing/canceling orders), you'll need to authenticate your requests:
+
+1. Generate an API key from your account
+2. Sign requests with your private key
+3. Include authentication headers
+
+See the CLOB API documentation for detailed authentication instructions.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CLOB API" icon="book" href="/developers/clob/overview">
+    Learn about the Central Limit Order Book
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/developers/real-time/websocket-connections">
+    Set up real-time data streams
+  </Card>
+  <Card title="Order Management" icon="list-check" href="/developers/clob/order-management">
+    Learn to place and manage orders
+  </Card>
+  <Card title="Gamma Markets" icon="database" href="/developers/gamma/market-structure">
+    Understand market metadata
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+1. **Cache Responses:** Reduce API calls by caching market data
+2. **Use WebSockets:** For real-time data, use WebSocket connections
+3. **Handle Errors:** Implement proper error handling and retries
+4. **Respect Rate Limits:** Monitor your usage and implement backoff strategies
+5. **Test First:** Use test environments before going to production
+
+## Support
+
+Need help? Check out:
+
+- API reference documentation
+- Community forums
+- Support channels
+
+Happy building!

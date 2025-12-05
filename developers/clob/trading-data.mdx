@@ -1,0 +1,296 @@
+---
+title: "Trading Data"
+description: "Access historical trading data and analytics"
+---
+
+## Overview
+
+Polymarket provides comprehensive trading data for analysis, backtesting, and research. All trade data is publicly accessible and includes complete market history.
+
+## Trade Data Structure
+
+Each trade contains:
+
+```json
+{
+  "id": "trade_id",
+  "market_id": "market_id",
+  "token_id": "token_id",
+  "price": "0.65",
+  "size": "100",
+  "side": "BUY",
+  "timestamp": 1704067199,
+  "maker": "0x1234...",
+  "taker": "0x5678..."
+}
+```
+
+### Fields Explained
+
+- **id:** Unique trade identifier
+- **market_id:** Market where trade occurred
+- **token_id:** Outcome token traded
+- **price:** Execution price in USDC
+- **size:** Number of shares traded
+- **side:** BUY or SELL (from taker perspective)
+- **timestamp:** Unix timestamp
+- **maker:** Address that provided liquidity
+- **taker:** Address that removed liquidity
+
+## Querying Trade Data
+
+### Get Recent Trades
+
+Retrieve the most recent trades:
+
+```http
+GET /trades?market_id={market_id}&limit=100
+```
+
+Parameters:
+- `market_id` (optional): Filter by market
+- `token_id` (optional): Filter by token
+- `limit` (optional): Max results (default 100)
+
+### Get Historical Trades
+
+Query trades within a time range:
+
+```http
+GET /trades?from={start_timestamp}&to={end_timestamp}
+```
+
+Example:
+```bash
+curl "https://clob.polymarket.com/trades?market_id=xyz&from=1704000000&to=1704100000"
+```
+
+### Get User Trades
+
+Retrieve trades for a specific user:
+
+```http
+GET /trades?user={address}
+```
+
+Returns all trades where the user was maker or taker.
+
+## Price History
+
+### Get Price Data
+
+Retrieve historical price information:
+
+```http
+GET /prices/history?market_id={market_id}&interval={interval}
+```
+
+Supported intervals:
+- `1m` - 1 minute
+- `5m` - 5 minutes
+- `15m` - 15 minutes
+- `1h` - 1 hour
+- `4h` - 4 hours
+- `1d` - 1 day
+
+Response:
+```json
+[
+  {
+    "timestamp": 1704067199,
+    "open": "0.64",
+    "high": "0.67",
+    "low": "0.63",
+    "close": "0.65",
+    "volume": "1500"
+  }
+]
+```
+
+### Price Calculations
+
+Prices are calculated using:
+- **Last Trade Price:** Most recent execution
+- **Midpoint Price:** (Best Bid + Best Ask) / 2
+- **Volume Weighted:** Weighted by trade size
+
+## Volume Data
+
+### Get Trading Volume
+
+```http
+GET /volume?market_id={market_id}
+```
+
+Returns:
+```json
+{
+  "market_id": "market_id",
+  "total_volume": "50000",
+  "volume_24h": "2500",
+  "volume_7d": "15000",
+  "trades_count": 432
+}
+```
+
+### Volume by Time Period
+
+```http
+GET /volume/history?market_id={market_id}&interval=1d
+```
+
+## Market Statistics
+
+### Get Market Stats
+
+```http
+GET /markets/{market_id}/stats
+```
+
+Returns comprehensive statistics:
+
+```json
+{
+  "market_id": "market_id",
+  "total_volume": "50000",
+  "liquidity": "5000",
+  "unique_traders": 234,
+  "total_trades": 1523,
+  "price_24h_change": "+0.05",
+  "high_24h": "0.70",
+  "low_24h": "0.60"
+}
+```
+
+## Data Analysis
+
+### Calculate Returns
+
+```javascript
+const trades = await fetch('/trades?user=address').then(r => r.json());
+
+let totalPnL = 0;
+trades.forEach(trade => {
+  const pnl = trade.side === 'SELL'
+    ? trade.price * trade.size
+    : -trade.price * trade.size;
+  totalPnL += pnl;
+});
+```
+
+### Volume Analysis
+
+```javascript
+const priceHistory = await fetch(
+  '/prices/history?market_id=xyz&interval=1h'
+).then(r => r.json());
+
+const totalVolume = priceHistory.reduce(
+  (sum, candle) => sum + parseFloat(candle.volume),
+  0
+);
+```
+
+### Price Trends
+
+```javascript
+const prices = await fetch('/prices/history').then(r => r.json());
+
+const ma = prices.slice(-20).reduce(
+  (sum, p) => sum + parseFloat(p.close),
+  0
+) / 20;
+```
+
+## Export Data
+
+### CSV Export
+
+While not directly supported, you can convert JSON to CSV:
+
+```javascript
+const trades = await fetch('/trades?market_id=xyz').then(r => r.json());
+
+const csv = [
+  'timestamp,price,size,side',
+  ...trades.map(t => `${t.timestamp},${t.price},${t.size},${t.side}`)
+].join('\n');
+```
+
+### Bulk Download
+
+For large datasets:
+1. Query in time chunks
+2. Combine results
+3. Store locally
+
+## Real-Time Data
+
+For live data, use WebSocket connections instead of polling:
+
+```javascript
+ws.subscribe({
+  channel: 'market',
+  market_id: 'xyz'
+});
+
+ws.on('trade', (trade) => {
+  console.log('New trade:', trade);
+});
+```
+
+## Data Retention
+
+- **Trade History:** Permanent
+- **Price Data:** All history available
+- **Order Book Snapshots:** Real-time only
+
+## Use Cases
+
+### Backtesting
+
+Test trading strategies using historical data:
+
+```javascript
+const history = await fetch('/prices/history').then(r => r.json());
+const strategy = new TradingStrategy();
+const results = strategy.backtest(history);
+```
+
+### Market Analysis
+
+Analyze market trends and patterns:
+
+```javascript
+const stats = await fetch('/markets/xyz/stats').then(r => r.json());
+console.log(`Liquidity: ${stats.liquidity}`);
+console.log(`24h Change: ${stats.price_24h_change}`);
+```
+
+### Portfolio Tracking
+
+Monitor performance:
+
+```javascript
+const myTrades = await fetch('/trades?user=myaddress').then(r => r.json());
+const portfolio = calculatePortfolio(myTrades);
+```
+
+## Best Practices
+
+1. **Cache Data:** Store historical data locally
+2. **Batch Queries:** Request multiple periods at once
+3. **Use Intervals:** Appropriate granularity for your use case
+4. **Rate Limits:** Respect API limits
+5. **WebSocket:** Use for real-time needs
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="WebSocket" icon="bolt" href="/developers/real-time/websocket-connections">
+    Set up real-time data streams
+  </Card>
+  <Card title="Gamma Markets" icon="database" href="/developers/gamma/market-structure">
+    Access market metadata
+  </Card>
+</CardGroup>

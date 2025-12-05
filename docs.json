@@ -1,68 +1,111 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Polymarket Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#efe9e0",
+    "light": "#efe9e0",
+    "dark": "#efe9e0"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/logo/fav.jpg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "User Guide",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "user-guide/get-started/what-is-polymarket",
+              "user-guide/get-started/how-to-sign-up",
+              "user-guide/get-started/how-to-deposit",
+              "user-guide/get-started/making-your-first-trade"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Deposits and Withdrawals",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "user-guide/deposits-withdrawals/deposit-by-transferring-crypto",
+              "user-guide/deposits-withdrawals/deposit-with-coinbase",
+              "user-guide/deposits-withdrawals/deposit-using-your-card",
+              "user-guide/deposits-withdrawals/deposit-usdc-on-ethereum",
+              "user-guide/deposits-withdrawals/large-cross-chain-deposits",
+              "user-guide/deposits-withdrawals/how-to-withdraw"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Markets",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "user-guide/markets/how-are-markets-created",
+              "user-guide/markets/how-are-prices-calculated",
+              "user-guide/markets/how-are-prediction-markets-resolved",
+              "user-guide/markets/how-are-markets-clarified",
+              "user-guide/markets/how-are-markets-disputed"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Trading",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "user-guide/trading/limit-orders",
+              "user-guide/trading/market-orders",
+              "user-guide/trading/holding-rewards",
+              "user-guide/trading/liquidity-rewards",
+              "user-guide/trading/trading-fees",
+              "user-guide/trading/does-polymarket-have-trading-limits",
+              "user-guide/trading/using-the-order-book"
+            ]
+          },
+          {
+            "group": "FAQs",
+            "pages": [
+              "user-guide/faqs/frequently-asked-questions"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "For Developers",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Getting Started",
             "pages": [
-              "api-reference/introduction"
+              "developers/introduction",
+              "developers/quickstart"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "CLOB API",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "developers/clob/overview",
+              "developers/clob/endpoints",
+              "developers/clob/order-management",
+              "developers/clob/trading-data"
+            ]
+          },
+          {
+            "group": "Real-time Data",
+            "pages": [
+              "developers/real-time/websocket-connections",
+              "developers/real-time/data-streams"
+            ]
+          },
+          {
+            "group": "Gamma Markets",
+            "pages": [
+              "developers/gamma/market-structure",
+              "developers/gamma/blockchain-integration"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Updates",
+            "pages": [
+              "changelog/overview"
             ]
           }
         ]
@@ -71,33 +114,33 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Polymarket",
+          "href": "https://polymarket.com",
+          "icon": "chart-line"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Official Docs",
+          "href": "https://docs.polymarket.com",
+          "icon": "book-open-cover"
         }
       ]
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/light.png",
+    "dark": "/logo/dark.png"
   },
   "navbar": {
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "https://polymarket.com/support"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Go to Polymarket",
+      "href": "https://polymarket.com"
     }
   },
   "contextual": {
@@ -114,9 +157,8 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/Polymarket",
+      "github": "https://github.com/Polymarket"
     }
   }
 }

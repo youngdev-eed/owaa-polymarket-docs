@@ -1,0 +1,320 @@
+---
+title: "CLOB API Endpoints"
+description: "Complete reference for Polymarket CLOB API endpoints"
+---
+
+## Base URL
+
+```
+https://clob.polymarket.com
+```
+
+## Markets
+
+### Get All Markets
+
+Retrieve a list of all available markets.
+
+```http
+GET /markets
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "market_id",
+    "question": "Will X happen?",
+    "end_date": "2024-12-31T23:59:59Z",
+    "tokens": [
+      {
+        "token_id": "yes_token_id",
+        "outcome": "Yes",
+        "price": "0.65"
+      },
+      {
+        "token_id": "no_token_id",
+        "outcome": "No",
+        "price": "0.35"
+      }
+    ]
+  }
+]
+```
+
+### Get Market by ID
+
+Retrieve details for a specific market.
+
+```http
+GET /markets/{market_id}
+```
+
+## Order Book
+
+### Get Order Book
+
+Retrieve the current order book for a token.
+
+```http
+GET /book?token_id={token_id}
+```
+
+**Parameters:**
+- `token_id` (required): The token identifier
+
+**Response:**
+```json
+{
+  "bids": [
+    {
+      "price": "0.65",
+      "size": "100"
+    }
+  ],
+  "asks": [
+    {
+      "price": "0.66",
+      "size": "150"
+    }
+  ]
+}
+```
+
+### Get Multiple Order Books
+
+Retrieve order books for multiple tokens at once.
+
+```http
+POST /books
+```
+
+**Request Body:**
+```json
+{
+  "token_ids": ["token_1", "token_2"]
+}
+```
+
+## Pricing
+
+### Get Market Prices
+
+Get current prices for a market.
+
+```http
+GET /prices?market_id={market_id}
+```
+
+**Response:**
+```json
+{
+  "market_id": "market_id",
+  "prices": {
+    "yes": "0.65",
+    "no": "0.35"
+  }
+}
+```
+
+### Get Midpoint Prices
+
+Get the midpoint between bid and ask.
+
+```http
+GET /midpoint?token_id={token_id}
+```
+
+### Get Price History
+
+Retrieve historical price data.
+
+```http
+GET /prices/history?market_id={market_id}&interval={interval}
+```
+
+**Parameters:**
+- `market_id` (required): Market identifier
+- `interval` (optional): Time interval (1m, 5m, 1h, 1d)
+- `from` (optional): Start timestamp
+- `to` (optional): End timestamp
+
+## Orders (Authenticated)
+
+### Create Order
+
+Place a new limit order.
+
+```http
+POST /order
+```
+
+**Request Body:**
+```json
+{
+  "token_id": "token_id",
+  "side": "BUY",
+  "price": "0.65",
+  "size": "100",
+  "nonce": 12345
+}
+```
+
+**Response:**
+```json
+{
+  "order_id": "order_id",
+  "status": "PENDING"
+}
+```
+
+### Create Batch Orders
+
+Place multiple orders at once.
+
+```http
+POST /orders
+```
+
+**Request Body:**
+```json
+{
+  "orders": [
+    {
+      "token_id": "token_1",
+      "side": "BUY",
+      "price": "0.65",
+      "size": "100"
+    },
+    {
+      "token_id": "token_2",
+      "side": "SELL",
+      "price": "0.45",
+      "size": "50"
+    }
+  ]
+}
+```
+
+### Get Order Status
+
+Check the status of an order.
+
+```http
+GET /orders/{order_id}
+```
+
+### Get User Orders
+
+Retrieve all orders for a user.
+
+```http
+GET /orders?user={address}
+```
+
+### Cancel Order
+
+Cancel a specific order.
+
+```http
+DELETE /orders/{order_id}
+```
+
+### Cancel All Orders
+
+Cancel all orders for a user.
+
+```http
+DELETE /orders
+```
+
+## Trades
+
+### Get Trades
+
+Retrieve trade history.
+
+```http
+GET /trades?market_id={market_id}
+```
+
+**Parameters:**
+- `market_id` (optional): Filter by market
+- `user` (optional): Filter by user address
+- `from` (optional): Start timestamp
+- `to` (optional): End timestamp
+
+## Spreads
+
+### Get Bid-Ask Spread
+
+Retrieve the current spread for a token.
+
+```http
+GET /spread?token_id={token_id}
+```
+
+**Response:**
+```json
+{
+  "token_id": "token_id",
+  "best_bid": "0.65",
+  "best_ask": "0.66",
+  "spread": "0.01"
+}
+```
+
+## Health Check
+
+### System Status
+
+Check API health status.
+
+```http
+GET /health
+```
+
+## Authentication
+
+All order management endpoints require authentication:
+
+1. Generate signature using your private key
+2. Include authentication headers:
+   - `Authorization`: Your API key
+   - `Signature`: Request signature
+   - `Timestamp`: Request timestamp
+
+## Rate Limits
+
+- **Public Endpoints:** 100 requests/minute
+- **Authenticated Endpoints:** 300 requests/minute
+- **WebSocket:** Unlimited (preferred for real-time data)
+
+Exceeding rate limits returns `429 Too Many Requests`.
+
+## Error Responses
+
+```json
+{
+  "error": "Error message",
+  "code": "ERROR_CODE",
+  "details": {}
+}
+```
+
+Common error codes:
+- `INVALID_TOKEN`: Token ID not found
+- `INSUFFICIENT_BALANCE`: Not enough funds
+- `ORDER_NOT_FOUND`: Order ID doesn't exist
+- `RATE_LIMIT_EXCEEDED`: Too many requests
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Order Management" icon="list-check" href="/developers/clob/order-management">
+    Learn to manage orders
+  </Card>
+  <Card title="Trading Data" icon="chart-line" href="/developers/clob/trading-data">
+    Access trading data
+  </Card>
+</CardGroup>

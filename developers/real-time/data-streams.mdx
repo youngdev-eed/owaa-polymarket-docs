@@ -1,0 +1,484 @@
+---
+title: "Real-Time Data Streams"
+description: "Available data streams and how to consume them"
+---
+
+## Available Streams
+
+Polymarket provides several real-time data streams for different use cases.
+
+## Market Data Stream
+
+### Price Updates
+
+Real-time price changes for markets:
+
+```javascript
+ws.subscribe({ channel: 'prices' });
+```
+
+Receive updates:
+```json
+{
+  "type": "price_update",
+  "market_id": "market_id",
+  "token_id": "token_id",
+  "price": "0.65",
+  "change_24h": "+0.05",
+  "timestamp": 1704067199
+}
+```
+
+### Market Statistics
+
+Live market statistics:
+
+```json
+{
+  "type": "stats_update",
+  "market_id": "market_id",
+  "volume_24h": "5000",
+  "trades_24h": 234,
+  "liquidity": "10000",
+  "timestamp": 1704067199
+}
+```
+
+## Order Book Stream
+
+### Full Order Book
+
+Complete order book snapshots:
+
+```javascript
+ws.subscribe({
+  channel: 'orderbook',
+  token_id: 'token_id',
+  depth: 10 // Number of price levels
+});
+```
+
+Snapshot:
+```json
+{
+  "type": "snapshot",
+  "token_id": "token_id",
+  "bids": [
+    {"price": "0.65", "size": "100"},
+    {"price": "0.64", "size": "200"}
+  ],
+  "asks": [
+    {"price": "0.66", "size": "150"},
+    {"price": "0.67", "size": "250"}
+  ],
+  "timestamp": 1704067199
+}
+```
+
+### Incremental Updates
+
+Delta updates for order book changes:
+
+```json
+{
+  "type": "orderbook_update",
+  "token_id": "token_id",
+  "changes": [
+    {
+      "side": "bid",
+      "price": "0.65",
+      "size": "120", // New size (0 = removed)
+      "action": "update"
+    }
+  ],
+  "timestamp": 1704067199
+}
+```
+
+## Trade Stream
+
+### Public Trades
+
+All executed trades:
+
+```javascript
+ws.subscribe({
+  channel: 'trades',
+  market_id: 'market_id'
+});
+```
+
+Trade events:
+```json
+{
+  "type": "trade",
+  "trade_id": "trade_id",
+  "market_id": "market_id",
+  "token_id": "token_id",
+  "price": "0.65",
+  "size": "100",
+  "side": "BUY",
+  "timestamp": 1704067199
+}
+```
+
+### Aggregated Trades
+
+Grouped trades within time window:
+
+```json
+{
+  "type": "trade_aggregate",
+  "market_id": "market_id",
+  "window": "1m",
+  "volume": "500",
+  "trades_count": 12,
+  "avg_price": "0.65",
+  "timestamp": 1704067199
+}
+```
+
+## User Stream (Authenticated)
+
+### Order Updates
+
+Your order status changes:
+
+```javascript
+ws.subscribe({
+  channel: 'user',
+  auth_token: 'your_token'
+});
+```
+
+Updates:
+```json
+{
+  "type": "order_update",
+  "order_id": "order_id",
+  "status": "PARTIALLY_FILLED",
+  "filled_size": "50",
+  "remaining_size": "50",
+  "avg_fill_price": "0.65",
+  "timestamp": 1704067199
+}
+```
+
+### Trade Notifications
+
+Your executed trades:
+
+```json
+{
+  "type": "user_trade",
+  "trade_id": "trade_id",
+  "order_id": "order_id",
+  "price": "0.65",
+  "size": "100",
+  "side": "BUY",
+  "fee": "0",
+  "timestamp": 1704067199
+}
+```
+
+### Balance Updates
+
+Account balance changes:
+
+```json
+{
+  "type": "balance_update",
+  "currency": "USDC",
+  "available": "1000.50",
+  "reserved": "200.00",
+  "total": "1200.50",
+  "timestamp": 1704067199
+}
+```
+
+## Market Events Stream
+
+### New Markets
+
+Newly created markets:
+
+```javascript
+ws.subscribe({ channel: 'market_events' });
+```
+
+```json
+{
+  "type": "market_created",
+  "market_id": "market_id",
+  "question": "Will X happen?",
+  "end_date": "2024-12-31T23:59:59Z",
+  "timestamp": 1704067199
+}
+```
+
+### Market Resolution
+
+Markets being resolved:
+
+```json
+{
+  "type": "market_resolved",
+  "market_id": "market_id",
+  "outcome": "Yes",
+  "resolution_price": "1.00",
+  "timestamp": 1704067199
+}
+```
+
+### Market Clarifications
+
+Important market updates:
+
+```json
+{
+  "type": "market_clarification",
+  "market_id": "market_id",
+  "clarification": "Additional details...",
+  "timestamp": 1704067199
+}
+```
+
+## System Stream
+
+### System Status
+
+Platform status updates:
+
+```javascript
+ws.subscribe({ channel: 'system' });
+```
+
+```json
+{
+  "type": "system_status",
+  "status": "operational",
+  "timestamp": 1704067199
+}
+```
+
+### Maintenance Notifications
+
+Scheduled maintenance:
+
+```json
+{
+  "type": "maintenance",
+  "scheduled_time": "2024-01-01T00:00:00Z",
+  "duration": "1h",
+  "affected_services": ["trading", "api"]
+}
+```
+
+## Stream Filtering
+
+### By Market
+
+Filter updates for specific markets:
+
+```javascript
+ws.subscribe({
+  channel: 'trades',
+  market_id: 'market_1'
+});
+```
+
+### By Token
+
+Filter by specific outcome tokens:
+
+```javascript
+ws.subscribe({
+  channel: 'orderbook',
+  token_id: 'token_1'
+});
+```
+
+### By User
+
+Filter your own activity:
+
+```javascript
+ws.subscribe({
+  channel: 'user',
+  auth_token: 'your_token'
+});
+```
+
+## Data Processing
+
+### Stream Buffer
+
+Handle bursts of messages:
+
+```javascript
+const buffer = [];
+let processing = false;
+
+ws.onmessage = (event) => {
+  buffer.push(JSON.parse(event.data));
+
+  if (!processing) {
+    processing = true;
+    processBuffer();
+  }
+};
+
+function processBuffer() {
+  while (buffer.length > 0) {
+    const message = buffer.shift();
+    handleMessage(message);
+  }
+  processing = false;
+}
+```
+
+### State Management
+
+Maintain local state:
+
+```javascript
+const state = {
+  prices: {},
+  orderBooks: {},
+  myOrders: {}
+};
+
+function handleMessage(data) {
+  switch(data.type) {
+    case 'price_update':
+      state.prices[data.market_id] = data.price;
+      break;
+    case 'orderbook_update':
+      updateOrderBook(state.orderBooks, data);
+      break;
+    case 'order_update':
+      state.myOrders[data.order_id] = data;
+      break;
+  }
+}
+```
+
+### Throttling Updates
+
+Limit UI update frequency:
+
+```javascript
+let lastUpdate = 0;
+const updateInterval = 100; // ms
+
+function handlePriceUpdate(data) {
+  const now = Date.now();
+  if (now - lastUpdate > updateInterval) {
+    updateUI(data);
+    lastUpdate = now;
+  }
+}
+```
+
+## Use Cases
+
+### Real-Time Dashboard
+
+Display live market data:
+
+```javascript
+ws.subscribe({ channel: 'prices' });
+ws.subscribe({ channel: 'market_events' });
+
+ws.on('price_update', (data) => {
+  updatePriceDisplay(data.market_id, data.price);
+});
+
+ws.on('market_created', (data) => {
+  addMarketToList(data);
+});
+```
+
+### Trading Bot
+
+Automated trading based on data:
+
+```javascript
+ws.subscribe({ channel: 'orderbook', token_id: 'xyz' });
+ws.subscribe({ channel: 'user', auth_token: 'token' });
+
+ws.on('orderbook_update', (data) => {
+  const signal = analyzeOrderBook(data);
+  if (signal) {
+    placeOrder(signal);
+  }
+});
+
+ws.on('order_update', (data) => {
+  if (data.status === 'FILLED') {
+    logTrade(data);
+  }
+});
+```
+
+### Portfolio Tracker
+
+Monitor your positions:
+
+```javascript
+ws.subscribe({ channel: 'user', auth_token: 'token' });
+
+ws.on('trade_notification', (data) => {
+  updatePosition(data);
+  calculatePnL();
+});
+
+ws.on('balance_update', (data) => {
+  updateBalanceDisplay(data);
+});
+```
+
+## Performance Considerations
+
+### Message Rate
+
+Typical message rates:
+- Prices: 1-10 per second per market
+- Order book: 10-50 per second per token
+- Trades: 1-20 per second per market
+- User updates: As events occur
+
+### Bandwidth
+
+Average bandwidth usage:
+- Market stream: ~10 KB/s
+- Order book stream: ~50 KB/s
+- Trade stream: ~20 KB/s
+- User stream: ~5 KB/s
+
+### Latency
+
+End-to-end latency:
+- Price updates: 50-100ms
+- Trade execution: 100-200ms
+- Order updates: 100-300ms
+
+## Best Practices
+
+1. **Subscribe Selectively:** Only to needed streams
+2. **Buffer Messages:** Handle bursts gracefully
+3. **Throttle Updates:** Don't overwhelm UI
+4. **Maintain State:** Track changes incrementally
+5. **Error Handling:** Graceful degradation
+6. **Reconnection:** Auto-reconnect on disconnect
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="WebSocket Setup" icon="plug" href="/developers/real-time/websocket-connections">
+    Connection and authentication
+  </Card>
+  <Card title="Order Management" icon="list" href="/developers/clob/order-management">
+    Place and manage orders
+  </Card>
+</CardGroup>

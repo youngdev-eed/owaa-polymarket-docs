@@ -1,0 +1,441 @@
+---
+title: "WebSocket Connections"
+description: "Set up real-time data streams with Polymarket WebSocket API"
+---
+
+## Overview
+
+WebSocket connections provide real-time updates for markets, order books, and trades. This is the recommended approach for applications requiring live data.
+
+## Connection Setup
+
+### WebSocket URL
+
+```
+wss://ws.polymarket.com
+```
+
+### Basic Connection
+
+```javascript
+const ws = new WebSocket('wss://ws.polymarket.com');
+
+ws.onopen = () => {
+  console.log('Connected to Polymarket WebSocket');
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Received:', data);
+};
+
+ws.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
+
+ws.onclose = () => {
+  console.log('Disconnected from WebSocket');
+};
+```
+
+## Authentication
+
+For user-specific channels (orders, trades), authenticate your connection:
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'auth',
+  token: 'your_api_token'
+}));
+```
+
+## Channel Subscriptions
+
+### Market Channel
+
+Subscribe to market updates:
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  channel: 'market',
+  market_id: 'market_id'
+}));
+```
+
+Receive updates:
+```json
+{
+  "channel": "market",
+  "type": "price_update",
+  "market_id": "market_id",
+  "price": "0.65",
+  "timestamp": 1704067199
+}
+```
+
+### Order Book Channel
+
+Subscribe to order book changes:
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  channel: 'orderbook',
+  token_id: 'token_id'
+}));
+```
+
+Receive updates:
+```json
+{
+  "channel": "orderbook",
+  "type": "update",
+  "token_id": "token_id",
+  "bids": [
+    {"price": "0.65", "size": "100"}
+  ],
+  "asks": [
+    {"price": "0.66", "size": "150"}
+  ]
+}
+```
+
+### Trades Channel
+
+Subscribe to trade executions:
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  channel: 'trades',
+  market_id: 'market_id'
+}));
+```
+
+Receive trades:
+```json
+{
+  "channel": "trades",
+  "type": "trade",
+  "market_id": "market_id",
+  "price": "0.65",
+  "size": "100",
+  "side": "BUY",
+  "timestamp": 1704067199
+}
+```
+
+### User Channel (Authenticated)
+
+Subscribe to your order updates:
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  channel: 'user',
+  auth_token: 'your_token'
+}));
+```
+
+Receive order updates:
+```json
+{
+  "channel": "user",
+  "type": "order_update",
+  "order_id": "order_id",
+  "status": "FILLED",
+  "filled_size": "100"
+}
+```
+
+## Message Types
+
+### Subscription Confirmation
+
+```json
+{
+  "type": "subscribed",
+  "channel": "market",
+  "market_id": "market_id"
+}
+```
+
+### Error Messages
+
+```json
+{
+  "type": "error",
+  "message": "Invalid channel",
+  "code": "INVALID_CHANNEL"
+}
+```
+
+### Heartbeat
+
+Server sends periodic heartbeats:
+
+```json
+{
+  "type": "heartbeat",
+  "timestamp": 1704067199
+}
+```
+
+Respond with pong:
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'pong',
+  timestamp: Date.now()
+}));
+```
+
+## Managing Subscriptions
+
+### Unsubscribe
+
+```javascript
+ws.send(JSON.stringify({
+  type: 'unsubscribe',
+  channel: 'market',
+  market_id: 'market_id'
+}));
+```
+
+### Multiple Subscriptions
+
+Subscribe to multiple channels:
+
+```javascript
+const subscriptions = [
+  { channel: 'market', market_id: 'market_1' },
+  { channel: 'market', market_id: 'market_2' },
+  { channel: 'trades', market_id: 'market_1' }
+];
+
+subscriptions.forEach(sub => {
+  ws.send(JSON.stringify({
+    type: 'subscribe',
+    ...sub
+  }));
+});
+```
+
+## Connection Management
+
+### Reconnection Logic
+
+```javascript
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+
+function connect() {
+  const ws = new WebSocket('wss://ws.polymarket.com');
+
+  ws.onclose = () => {
+    if (reconnectAttempts < maxReconnectAttempts) {
+      reconnectAttempts++;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+      setTimeout(connect, delay);
+    }
+  };
+
+  ws.onopen = () => {
+    reconnectAttempts = 0;
+  };
+
+  return ws;
+}
+```
+
+### Ping/Pong
+
+Keep connection alive:
+
+```javascript
+setInterval(() => {
+  ws.send(JSON.stringify({
+    type: 'ping',
+    timestamp: Date.now()
+  }));
+}, 30000); // Every 30 seconds
+```
+
+## Data Processing
+
+### Order Book Reconstruction
+
+```javascript
+let orderBook = { bids: [], asks: [] };
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+
+  if (data.channel === 'orderbook') {
+    if (data.type === 'snapshot') {
+      orderBook = data;
+    } else if (data.type === 'update') {
+      updateOrderBook(orderBook, data);
+    }
+  }
+};
+
+function updateOrderBook(book, update) {
+  // Merge updates with existing book
+  // Handle price level additions, updates, and removals
+}
+```
+
+### Price Aggregation
+
+```javascript
+const prices = {};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+
+  if (data.type === 'price_update') {
+    prices[data.market_id] = {
+      price: data.price,
+      timestamp: data.timestamp
+    };
+  }
+};
+```
+
+## Best Practices
+
+### Connection
+
+1. **Implement Reconnection:** Auto-reconnect on disconnect
+2. **Handle Errors:** Graceful error handling
+3. **Authentication:** Secure token management
+4. **Heartbeats:** Respond to keep-alive messages
+
+### Subscriptions
+
+1. **Selective:** Only subscribe to needed channels
+2. **Cleanup:** Unsubscribe when no longer needed
+3. **Batch:** Subscribe to multiple channels at once
+4. **Validate:** Check subscription confirmations
+
+### Data Handling
+
+1. **Buffer Messages:** Handle bursts of updates
+2. **Throttle Updates:** Limit UI update frequency
+3. **Store State:** Maintain local order book state
+4. **Validate Data:** Check message integrity
+
+## Performance
+
+### Latency
+
+Typical message latency:
+- Market updates: < 50ms
+- Trade executions: < 100ms
+- Order updates: < 200ms
+
+### Throughput
+
+Connection can handle:
+- 100+ messages per second
+- Multiple simultaneous subscriptions
+- Minimal CPU overhead
+
+## Troubleshooting
+
+### Connection Issues
+
+- Verify WebSocket URL
+- Check network connectivity
+- Ensure proper TLS support
+- Try different network
+
+### Authentication Failures
+
+- Verify API token validity
+- Check token permissions
+- Ensure proper format
+- Regenerate token if needed
+
+### Missing Updates
+
+- Check subscription status
+- Verify channel parameters
+- Review error messages
+- Confirm heartbeat responses
+
+## Example: Complete Implementation
+
+```javascript
+class PolymarketWebSocket {
+  constructor(url = 'wss://ws.polymarket.com') {
+    this.url = url;
+    this.ws = null;
+    this.subscriptions = new Set();
+    this.handlers = {};
+  }
+
+  connect() {
+    this.ws = new WebSocket(this.url);
+
+    this.ws.onopen = () => {
+      console.log('Connected');
+      this.resubscribe();
+    };
+
+    this.ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      this.handleMessage(data);
+    };
+
+    this.ws.onclose = () => {
+      console.log('Disconnected');
+      setTimeout(() => this.connect(), 5000);
+    };
+  }
+
+  subscribe(channel, params = {}) {
+    const sub = { type: 'subscribe', channel, ...params };
+    this.subscriptions.add(JSON.stringify(sub));
+    this.ws.send(JSON.stringify(sub));
+  }
+
+  on(event, handler) {
+    this.handlers[event] = handler;
+  }
+
+  handleMessage(data) {
+    const handler = this.handlers[data.type];
+    if (handler) handler(data);
+  }
+
+  resubscribe() {
+    this.subscriptions.forEach(sub => {
+      this.ws.send(sub);
+    });
+  }
+}
+
+// Usage
+const ws = new PolymarketWebSocket();
+ws.connect();
+
+ws.on('price_update', (data) => {
+  console.log('Price:', data.price);
+});
+
+ws.subscribe('market', { market_id: 'xyz' });
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Data Streams" icon="stream" href="/developers/real-time/data-streams">
+    Learn about available data streams
+  </Card>
+  <Card title="Order Management" icon="list" href="/developers/clob/order-management">
+    Manage orders via API
+  </Card>
+</CardGroup>
