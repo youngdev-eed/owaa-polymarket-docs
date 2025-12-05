@@ -13,6 +13,10 @@
       "dark": "#efe9e0"
     }
   },
+  "appearance": {
+    "default": "light",
+    "strict": true
+  },
   "favicon": "/logo/fav.jpg",
   "navigation": {
     "tabs": [
