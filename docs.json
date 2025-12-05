@@ -3,9 +3,15 @@
   "theme": "mint",
   "name": "Polymarket Documentation",
   "colors": {
-    "primary": "#efe9e0",
-    "light": "#efe9e0",
-    "dark": "#efe9e0"
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
+  },
+  "background": {
+    "color":{
+      "light": "#efe9e0",
+      "dark": "#efe9e0"
+    }
   },
   "favicon": "/logo/fav.jpg",
   "navigation": {

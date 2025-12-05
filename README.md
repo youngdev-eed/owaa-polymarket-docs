@@ -8,7 +8,7 @@ Click the green **Use this template** button at the top of this repo to copy the
 - Navigation
 - Customizations
 - API reference pages
-- Use of popular components
+- Use of popular components // #efe9e0
 
 **[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
 
